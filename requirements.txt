@@ -1,0 +1,15 @@
+# PROJETO FINAL - DASHBOARD WALMART
+
+dash
+plotly
+
+pandas
+numpy
+
+notebook
+ipykernel
+
+# requests
+# beautifulsoup4
+
+# pip install -r requirements.txt
