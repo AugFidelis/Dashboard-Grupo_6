@@ -5,11 +5,16 @@ import plotly.graph_objects as go
 import plotly.io as pio
 import pandas as pd
 
+# Aqui eu carrego a base ja tratada no script de preparacao.
+# Essa base e a que alimenta todos os graficos do dashboard.
+
 # ── Dados ─────────────────────────────────────────────────────────────────────
 df = pd.read_csv("data/processed/walmart_limpo.csv")
 df["Date"] = pd.to_datetime(df["Date"])
 
 # ── Paleta ────────────────────────────────────────────────────────────────────
+# Separei as cores em variaveis para manter o dashboard padronizado
+# e facilitar qualquer ajuste visual antes da apresentacao.
 AZUL    = "#1A56A0"
 CINZA_E = "#444444"
 CINZA_M = "#777777"
@@ -24,6 +29,8 @@ ESCALA_AZUL  = [[0, "#C8D9EF"], [1, AZUL]]
 ESCALA_CINZA = [[0, "#E0E0E0"], [1, CINZA_E]]
 
 # ── Template Plotly — estilo acadêmico ───────────────────────────────────────
+# O template do Plotly evita repetir configuracoes de fonte, fundo,
+# legenda e eixos em cada grafico que foi criado.
 pio.templates["academico"] = go.layout.Template(
     layout=dict(
         font=dict(family="'IBM Plex Sans', sans-serif", color=TEXTO, size=12),
@@ -64,6 +71,8 @@ pio.templates["academico"] = go.layout.Template(
 pio.templates.default = "academico"
 
 # ── KPIs ──────────────────────────────────────────────────────────────────────
+# Estes indicadores sao calculados uma vez no inicio porque aparecem
+# nos cards principais da visao geral.
 total_vendas    = df["Weekly_Sales"].sum()
 media_semanal   = df["Weekly_Sales"].mean()
 total_lojas     = df["Store"].nunique()
@@ -72,11 +81,14 @@ total_registros = len(df)
 media_geral     = df["Weekly_Sales"].mean()
 
 def fmt(v):
+    # Formata valores grandes para os cards ficarem mais faceis de ler.
     if v >= 1e9: return f"${v/1e9:.2f}B"
     if v >= 1e6: return f"${v/1e6:.1f}M"
     return f"${v:,.0f}"
 
 # ── App ───────────────────────────────────────────────────────────────────────
+# Inicio da aplicacao Dash. O suppress_callback_exceptions permite
+# callbacks de componentes que so aparecem quando a aba e aberta.
 app = dash.Dash(__name__, suppress_callback_exceptions=True)
 app.title = "Análise de Vendas Walmart — Grupo 6"
 
@@ -90,6 +102,8 @@ ESTILO_CARTA = {
 }
 
 # ── Header ────────────────────────────────────────────────────────────────────
+# Cabecalho fixo com o titulo do trabalho e as abas de navegacao.
+# As abas separam a visao resumida da parte interativa.
 header = html.Div([
     html.Div([
         html.Div([
@@ -125,6 +139,8 @@ header = html.Div([
     "position": "sticky", "top": "0", "zIndex": "100",
 })
 
+# Layout base da pagina: primeiro entra o header e depois um conteiner
+# vazio que sera preenchido conforme a aba selecionada.
 app.layout = html.Div([
     header,
     html.Div(
@@ -142,6 +158,7 @@ app.layout = html.Div([
 # ══════════════════════════════════════════════════════════════════════════════
 
 def rotulo_secao(texto):
+    # Cria o titulo pequeno que separa os blocos do dashboard.
     return html.Div([
         html.Span(texto, style={
             "fontSize": "11px", "fontWeight": "500",
@@ -155,6 +172,8 @@ def rotulo_secao(texto):
     ])
 
 def layout_dashboard1():
+    # Esta primeira aba mostra a leitura executiva do trabalho:
+    # indicadores, graficos principais e os insights ja selecionados.
     # ── KPIs ─────────────────────────────────────────────────────────────────
     kpis_data = [
         ("Faturamento Total", fmt(total_vendas)),
@@ -186,6 +205,7 @@ def layout_dashboard1():
     ], style={"display": "flex", "gap": "12px", "flexWrap": "wrap", "marginBottom": "28px"})
 
     # ── Gráfico 1: Evolução mensal ────────────────────────────────────────────
+    # Agrupo por ano e mes para transformar os dados semanais em serie mensal.
     df_mensal = df.groupby(["Ano", "Mes"])["Weekly_Sales"].sum().reset_index()
     df_mensal["Periodo"] = pd.to_datetime(
         df_mensal["Ano"].astype(str) + "-" + df_mensal["Mes"].astype(str), format="%Y-%m"
@@ -207,6 +227,7 @@ def layout_dashboard1():
     fig_tendencia.update_layout(showlegend=False)
 
     # ── Gráfico 2: Tipo de loja ───────────────────────────────────────────────
+    # Aqui comparo os tipos de loja para mostrar qual grupo puxa mais faturamento.
     df_tipo = df.groupby("Type")["Weekly_Sales"].agg(["sum", "mean"]).reset_index()
     df_tipo.columns = ["Tipo", "Total", "Media"]
     df_tipo["Total_B"] = df_tipo["Total"] / 1_000_000_000
@@ -226,6 +247,7 @@ def layout_dashboard1():
     fig_tipo.update_layout(showlegend=False)
 
     # ── Gráfico 3: Feriados ───────────────────────────────────────────────────
+    # Calculo a media por feriado para ver quais datas mudam mais o resultado.
     df_feriado = df.groupby("Nome_Feriado")["Weekly_Sales"].mean().reset_index()
     df_feriado.columns = ["Feriado", "Media_Vendas"]
     df_feriado = df_feriado.sort_values("Media_Vendas", ascending=False)
@@ -255,6 +277,7 @@ def layout_dashboard1():
     )
 
     # ── Gráfico 4: Top 10 lojas ───────────────────────────────────────────────
+    # Seleciono as 10 lojas com maior faturamento acumulado no periodo.
     df_lojas = df.groupby("Store")["Weekly_Sales"].sum().reset_index()
     df_lojas.columns = ["Loja", "Total"]
     df_lojas = df_lojas.nlargest(10, "Total")
@@ -276,6 +299,7 @@ def layout_dashboard1():
     fig_top_lojas.update_layout(coloraxis_showscale=False)
 
     # ── Callout de insights ───────────────────────────────────────────────────
+    # Os insights resumem as conclusoes que eu quero defender na apresentacao.
     insights = html.Div([
         html.Div(style={
             "width": "3px", "background": AZUL,
@@ -309,6 +333,7 @@ def layout_dashboard1():
     })
 
     def carta(fig, span=1):
+        # Pequena funcao auxiliar para nao repetir a estrutura visual dos graficos.
         return html.Div(
             dcc.Graph(figure=fig, config={"displayModeBar": False}),
             style={**ESTILO_CARTA, "gridColumn": f"span {span}"},
@@ -339,12 +364,15 @@ def layout_dashboard1():
 # ══════════════════════════════════════════════════════════════════════════════
 
 def layout_dashboard2():
+    # A segunda aba e a parte interativa: o usuario filtra os dados
+    # e todos os graficos abaixo sao atualizados pelos callbacks.
     anos_disp   = sorted(df["Ano"].unique())
     tipos_disp  = sorted(df["Type"].unique())
     portes_disp = ["Pequena", "Média", "Grande"]
     estacoes    = ["Verão", "Outono", "Inverno", "Primavera"]
 
     def check(id_, opts, vals):
+        # Cria listas de selecao reutilizaveis para ano, tipo e porte de loja.
         return dcc.Checklist(
             id=id_,
             options=[{"label": html.Span(str(o), style={"fontSize": "13px", "marginLeft": "6px"}), "value": o} for o in opts],
@@ -354,12 +382,14 @@ def layout_dashboard2():
         )
 
     def rotulo_filtro(texto):
+        # Padroniza os titulos pequenos usados acima de cada filtro.
         return html.Div(texto, style={
             "fontSize": "10.5px", "fontWeight": "500",
             "textTransform": "uppercase", "letterSpacing": "0.06em",
             "color": CINZA_M, "marginBottom": "8px", "marginTop": "16px",
         })
 
+    # Barra lateral com todos os filtros que controlam os graficos da aba 2.
     sidebar = html.Div([
         html.Div("Filtros", style={
             "fontSize": "13px", "fontWeight": "500",
@@ -403,11 +433,13 @@ def layout_dashboard2():
     })
 
     def graf_box(id_graf):
+        # Cria o card do grafico deixando o codigo do layout mais limpo.
         return html.Div(
             dcc.Graph(id=id_graf, config={"displayModeBar": False}),
             style=ESTILO_CARTA,
         )
 
+    # Area principal onde ficam os graficos que respondem aos filtros.
     charts_area = html.Div([
         html.Div([
             graf_box("graf-vendas-tempo"),
@@ -435,6 +467,7 @@ def layout_dashboard2():
 # ── Callback: troca de tab ────────────────────────────────────────────────────
 @callback(Output("conteudo-tab", "children"), Input("tabs-principal", "value"))
 def renderizar_tab(tab):
+    # Quando a pessoa troca a aba, este callback escolhe qual layout mostrar.
     if tab == "tab-1":
         return layout_dashboard1()
     return layout_dashboard2()
@@ -442,6 +475,8 @@ def renderizar_tab(tab):
 
 # ── Filtro compartilhado ──────────────────────────────────────────────────────
 def filtrar(anos, tipos, porte, temperatura, estacao):
+    # Filtro centralizado: todos os graficos interativos usam a mesma regra
+    # para garantir que os resultados estejam falando da mesma selecao.
     mask = df["Ano"].isin(anos) & df["Type"].isin(tipos) & df["Porte_Loja"].isin(porte)
     if temperatura != "Todas":
         mask &= df["Faixa_Temperatura"] == temperatura
@@ -450,6 +485,8 @@ def filtrar(anos, tipos, porte, temperatura, estacao):
     return df[mask]
 
 INPUTS_FILTRO = [
+    # Lista comum de entradas dos filtros. Assim eu nao preciso repetir
+    # os mesmos Inputs manualmente em cada callback.
     Input("filtro-ano", "value"),
     Input("filtro-tipo", "value"),
     Input("filtro-porte", "value"),
@@ -461,9 +498,12 @@ INPUTS_FILTRO = [
 # ── Callbacks ─────────────────────────────────────────────────────────────────
 @callback(Output("graf-vendas-tempo", "figure"), *INPUTS_FILTRO)
 def update_vendas_tempo(anos, tipos, porte, temperatura, estacao):
+    # Grafico de linha: mostra como as vendas evoluem no tempo
+    # depois que os filtros da aba interativa sao aplicados.
     dff = filtrar(anos, tipos, porte, temperatura, estacao)
     if dff.empty:
         return go.Figure()
+    # Agrupo por mes e tipo de loja para comparar tendencias entre A e B.
     df_mes = dff.groupby(["Ano", "Mes", "Type"])["Weekly_Sales"].sum().reset_index()
     df_mes["Periodo"] = pd.to_datetime(
         df_mes["Ano"].astype(str) + "-" + df_mes["Mes"].astype(str), format="%Y-%m"
@@ -481,6 +521,7 @@ def update_vendas_tempo(anos, tipos, porte, temperatura, estacao):
 
 @callback(Output("graf-feriados", "figure"), *INPUTS_FILTRO)
 def update_feriados(anos, tipos, porte, temperatura, estacao):
+    # Mostra a venda media de cada feriado dentro do recorte escolhido.
     dff = filtrar(anos, tipos, porte, temperatura, estacao)
     if dff.empty:
         return go.Figure()
@@ -500,6 +541,7 @@ def update_feriados(anos, tipos, porte, temperatura, estacao):
 
 @callback(Output("graf-departamentos", "figure"), *INPUTS_FILTRO)
 def update_departamentos(anos, tipos, porte, temperatura, estacao):
+    # Identifica quais departamentos mais faturaram no recorte filtrado.
     dff = filtrar(anos, tipos, porte, temperatura, estacao)
     if dff.empty:
         return go.Figure()
@@ -520,6 +562,7 @@ def update_departamentos(anos, tipos, porte, temperatura, estacao):
 
 @callback(Output("graf-boxplot-tipo", "figure"), *INPUTS_FILTRO)
 def update_boxplot(anos, tipos, porte, temperatura, estacao):
+    # Boxplot usado para comparar a distribuicao das vendas entre tipos de loja.
     dff = filtrar(anos, tipos, porte, temperatura, estacao)
     if dff.empty:
         return go.Figure()
@@ -537,9 +580,11 @@ def update_boxplot(anos, tipos, porte, temperatura, estacao):
 
 @callback(Output("graf-markdown", "figure"), *INPUTS_FILTRO)
 def update_markdown(anos, tipos, porte, temperatura, estacao):
+    # Compara semanas com promocao e sem promocao para observar o efeito das markdowns.
     dff = filtrar(anos, tipos, porte, temperatura, estacao)
     if dff.empty:
         return go.Figure()
+    # Uso copy para criar colunas auxiliares sem modificar o dataframe original.
     dff = dff.copy()
     dff["Promocao"] = dff["Tem_Promocao"].map({True: "Com promoção", False: "Sem promoção"})
     df_md = dff.groupby(["Mes", "Promocao"])["Weekly_Sales"].mean().reset_index()
@@ -560,6 +605,7 @@ def update_markdown(anos, tipos, porte, temperatura, estacao):
 
 @callback(Output("graf-trimestre", "figure"), *INPUTS_FILTRO)
 def update_trimestre(anos, tipos, porte, temperatura, estacao):
+    # Resume as vendas por trimestre para facilitar comparacoes sazonais.
     dff = filtrar(anos, tipos, porte, temperatura, estacao)
     if dff.empty:
         return go.Figure()
@@ -578,6 +624,7 @@ def update_trimestre(anos, tipos, porte, temperatura, estacao):
 
 @callback(Output("graf-porte", "figure"), *INPUTS_FILTRO)
 def update_porte(anos, tipos, porte, temperatura, estacao):
+    # Cruza porte da loja com estacao do ano para analisar diferencas de comportamento.
     dff = filtrar(anos, tipos, porte, temperatura, estacao)
     if dff.empty:
         return go.Figure()
@@ -598,4 +645,5 @@ def update_porte(anos, tipos, porte, temperatura, estacao):
 
 
 if __name__ == "__main__":
+    # Executa o servidor local do Dash quando rodamos: python app.py
     app.run(debug=True)

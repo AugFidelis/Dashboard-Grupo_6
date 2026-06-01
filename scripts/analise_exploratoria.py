@@ -9,6 +9,9 @@ import pandas as pd
 pd.set_option("display.max_columns", None)
 pd.set_option("display.float_format", "{:,.2f}".format)
 
+# Este script foi usado para entender a base antes de montar o dashboard.
+# Ele imprime os principais numeros que depois viraram graficos e insights.
+
 # ── 1. Carregamento ───────────────────────────────────────────────────────────
 df = pd.read_csv("data/processed/walmart_limpo.csv")
 df["Date"] = pd.to_datetime(df["Date"])
@@ -22,6 +25,8 @@ print(f"Periodo:   {df['Date'].min().date()} a {df['Date'].max().date()}")
 print(f"Lojas:     {df['Store'].nunique()} (IDs {df['Store'].min()}–{df['Store'].max()})")
 print(f"Deptos:    {df['Dept'].nunique()} distintos")
 print(f"\nTipos de loja:")
+# Primeiro faco um diagnostico geral para saber tamanho da base,
+# periodo analisado, quantidade de lojas e perfil dos tipos de loja.
 print(df.groupby("Type").agg(
     n_lojas=("Store", "nunique"),
     tamanho_medio=("Size", "mean"),
@@ -32,6 +37,7 @@ print(df.groupby("Type").agg(
 print("\n" + "=" * 60)
 print("ESTATÍSTICAS DESCRITIVAS — Weekly_Sales")
 print("=" * 60)
+# Estatisticas basicas ajudam a entender escala, media e dispersao das vendas.
 stats = df["Weekly_Sales"].describe()
 print(stats.apply(lambda x: f"$ {x:,.0f}"))
 
@@ -39,6 +45,7 @@ print(stats.apply(lambda x: f"$ {x:,.0f}"))
 print("\n" + "=" * 60)
 print("VENDAS POR ANO")
 print("=" * 60)
+# Aqui comparo o desempenho agregado de cada ano para ver a tendencia geral.
 por_ano = df.groupby("Ano")["Weekly_Sales"].agg(
     total="sum", media="mean", mediana="median"
 ).round(0)
@@ -48,6 +55,7 @@ print(por_ano.map(lambda x: f"$ {x:,.0f}"))
 print("\n" + "=" * 60)
 print("IMPACTO DOS FERIADOS")
 print("=" * 60)
+# Comparo cada feriado com a media geral para medir o impacto percentual.
 media_geral = df["Weekly_Sales"].mean()
 por_feriado = df.groupby("Nome_Feriado")["Weekly_Sales"].agg(
     media="mean", total="sum", n_semanas="count"
@@ -62,6 +70,7 @@ print(por_feriado.to_string(index=False))
 print("\n" + "=" * 60)
 print("DESEMPENHO POR TIPO DE LOJA")
 print("=" * 60)
+# Esta tabela mostra se o tipo de loja influencia faturamento, media e tamanho.
 por_tipo = df.groupby("Type").agg(
     total_vendas=("Weekly_Sales", "sum"),
     media_semanal=("Weekly_Sales", "mean"),
@@ -77,6 +86,7 @@ print(por_tipo)
 print("\n" + "=" * 60)
 print("TOP 10 DEPARTAMENTOS POR FATURAMENTO TOTAL")
 print("=" * 60)
+# O ranking de departamentos mostra onde esta concentrada a maior parte das vendas.
 top_depts = (
     df.groupby("Dept")["Weekly_Sales"].sum()
     .sort_values(ascending=False)
@@ -89,6 +99,7 @@ for dept, val in top_depts.items():
 print("\n" + "=" * 60)
 print("IMPACTO DAS MARKDOWNS (PROMOÇÕES)")
 print("=" * 60)
+# Somo as cinco colunas MarkDown para criar uma leitura unica de promocao.
 df["Total_Markdown"] = df[["MarkDown1", "MarkDown2", "MarkDown3",
                              "MarkDown4", "MarkDown5"]].sum(axis=1)
 df["Com_Markdown"] = df["Total_Markdown"] > 0
@@ -107,6 +118,7 @@ print(f"\nDiferença com promoção: {dif_pct:+.1f}%")
 print("\n" + "=" * 60)
 print("INSIGHTS FORMULADOS")
 print("=" * 60)
+# Esta lista organiza os principais achados em frases prontas para a apresentacao.
 insights = [
     ("Insight 1 [Dashboard 1]",
      "Ação de Graças eleva as vendas em +41% acima da média geral "

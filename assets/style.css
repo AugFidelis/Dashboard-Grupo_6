@@ -1,7 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=IBM+Plex+Serif:wght@400;500&display=swap');
 
+/* CSS geral do dashboard. Mantive aqui somente ajustes visuais que o Dash
+   nao controla tao bem direto pelo Python. */
+
 *, *::before, *::after { box-sizing: border-box; }
 
+/* Configuracao base da pagina, principalmente fonte e cores principais. */
 body {
   margin: 0;
   padding: 0;
@@ -15,6 +19,7 @@ body {
 ::-webkit-scrollbar-track { background: #F9F9F9; }
 ::-webkit-scrollbar-thumb { background: #CCCCCC; border-radius: 2px; }
 
+/* Estilo das abas do Dash para combinar com o visual mais academico. */
 /* ── Tabs ── */
 .dash-tabs {
   border-bottom: 1px solid #DDDDDD !important;
@@ -46,6 +51,7 @@ body {
   font-weight: 500 !important;
 }
 
+/* Ajustes dos dropdowns dos filtros para eles ficarem no mesmo padrao visual. */
 /* ── Dropdowns ── */
 .Select-control {
   border: 1px solid #DDDDDD !important;

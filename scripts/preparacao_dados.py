@@ -2,6 +2,9 @@ import pandas as pd
 import os
 
 def preparar_dados():
+    # Este script prepara a base final usada no app.py.
+    # A ideia foi deixar toda limpeza aqui para o dashboard ficar mais simples.
+
     # Verifica se as pastas existem, se não ele cria automaticamente
     os.makedirs('data/processed', exist_ok=True)
 
@@ -10,6 +13,8 @@ def preparar_dados():
     df_features = pd.read_csv('data/raw/features - Walmart Sales Forecast.csv')
     df_stores = pd.read_csv('data/raw/stores - Walmart Sales Forecast.csv')
 
+    # Nesta parte eu junto as tres tabelas do dataset:
+    # vendas, informacoes das lojas e variaveis externas como clima e markdowns.
     # 3. Integração de Dados (O Merge)
     # Primeiro juntamos as vendas com os detalhes das lojas usando a coluna 'Store'
     df_merged = df_train.merge(df_stores, on='Store', how='left')
@@ -18,6 +23,8 @@ def preparar_dados():
     # Usamos 'Store', 'Date' e 'IsHoliday' como chave para evitar colunas duplicadas
     df_merged = df_merged.merge(df_features, on=['Store', 'Date', 'IsHoliday'], how='left')
 
+    # Depois do merge, trato os problemas que poderiam atrapalhar os calculos.
+    # O principal caso sao valores vazios ou negativos nas colunas de promocao.
     # 4. Limpeza e Tratamento dos Dados
     # Os únicos valores nulos encontrados foram nas colunas MarkDown1 a MarkDown5 (Descontos).
     # Quando é nulo, significa que não houve promoção na semana, então é preenchido com 0.
@@ -32,6 +39,8 @@ def preparar_dados():
     # 4.3 Remoção de Inconsistências (Registros Duplicados)
     df_merged = df_merged.drop_duplicates()
 
+    # A partir daqui eu crio colunas novas para facilitar os filtros e graficos.
+    # Essas variaveis evitam fazer regras complicadas direto dentro do dashboard.
     # 5. Transformação de Dados (Criando novas variáveis)
     # Convertendo a coluna Date de texto para o formato de data do python
     df_merged['Date'] = pd.to_datetime(df_merged['Date'], format='%Y-%m-%d')
@@ -47,6 +56,8 @@ def preparar_dados():
 
     # Cria uma função para mapear o mês para o nome do feriado se existir um no mês
     def nomear_feriado(linha):
+        # O dataset marca se a semana tem feriado, mas nao vem com o nome.
+        # Por isso eu uso o mes para classificar os principais feriados analisados.
         if not linha['IsHoliday']:
             return 'Sem Feriado'
         elif linha['Mes'] == 2:
@@ -70,6 +81,7 @@ def preparar_dados():
 
     # 5.4 Estação do ano (hemisférico norte, onde ficam as lojas dos EUA)
     def classificar_estacao(mes):
+        # Como as lojas sao dos EUA, usei as estacoes do hemisferio norte.
         if mes in [12, 1, 2]:
             return 'Inverno'
         elif mes in [3, 4, 5]:
@@ -92,6 +104,7 @@ def preparar_dados():
     # Pequena: abaixo do percentil 33 | Média: entre 33 e 66 | Grande: acima do 66
     p33 = df_merged['Size'].quantile(0.33)
     p66 = df_merged['Size'].quantile(0.66)
+    # Usei tercis para dividir as lojas em tres grupos de tamanho equilibrados.
     df_merged['Porte_Loja'] = pd.cut(
         df_merged['Size'],
         bins=[0, p33, p66, float('inf')],
@@ -99,6 +112,7 @@ def preparar_dados():
     )
 
     # 6. Exportação
+    # No final salvo a base pronta. O dashboard le exatamente este arquivo.
     df_merged.to_csv('data/processed/walmart_limpo.csv', index=False)
     
     print(f"Total de linhas processadas: {df_merged.shape[0]}")
