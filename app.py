@@ -58,9 +58,9 @@ pio.templates["academico"] = go.layout.Template(
         legend=dict(
             bgcolor="rgba(0,0,0,0)", borderwidth=0,
             font=dict(size=11, color=CINZA_M),
-            orientation="h", yanchor="bottom", y=1.02,
+            orientation="h", yanchor="bottom", y=1.08, x=0,
         ),
-        margin=dict(l=4, r=4, t=40, b=4),
+        margin=dict(l=68, r=28, t=76, b=58),
         hoverlabel=dict(
             bgcolor=TEXTO, font_color=BRANCO,
             font_size=12, bordercolor=TEXTO,
@@ -98,8 +98,21 @@ ESTILO_CARTA = {
     "background": BRANCO,
     "border": f"1px solid {BORDA}",
     "borderRadius": "3px",
-    "padding": "20px",
+    "padding": "14px 16px 10px",
+    "minWidth": "0",
+    "overflow": "hidden",
 }
+
+ESTILO_GRAFICO = {"height": "390px", "width": "100%"}
+
+def ajustar_grafico(fig, *, top=76, left=68, right=28, bottom=58, legend_x=0):
+    # Da espaco para titulos, legendas e rotulos sem cortar dentro dos cards.
+    fig.update_layout(
+        autosize=True,
+        margin=dict(l=left, r=right, t=top, b=bottom),
+        legend=dict(x=legend_x),
+    )
+    return fig
 
 # ── Header ────────────────────────────────────────────────────────────────────
 # Cabecalho fixo com o titulo do trabalho e as abas de navegacao.
@@ -225,6 +238,7 @@ def layout_dashboard1():
         hovertemplate="<b>%{x|%b %Y}</b><br>$%{y:.1f}M<extra></extra>",
     )
     fig_tendencia.update_layout(showlegend=False)
+    ajustar_grafico(fig_tendencia, left=72, right=24, bottom=54)
 
     # ── Gráfico 2: Tipo de loja ───────────────────────────────────────────────
     # Aqui os tipos de loja sao comparados para mostrar qual grupo puxa mais faturamento.
@@ -242,9 +256,10 @@ def layout_dashboard1():
     )
     fig_tipo.update_traces(
         textposition="outside", textfont_size=11,
-        marker_line_width=0, width=0.4,
+        marker_line_width=0, width=0.4, cliponaxis=False,
     )
     fig_tipo.update_layout(showlegend=False)
+    ajustar_grafico(fig_tipo, top=82, left=72, right=34, bottom=54)
 
     # ── Gráfico 3: Feriados ───────────────────────────────────────────────────
     # A media por feriado e calculada para ver quais datas mudam mais o resultado.
@@ -275,6 +290,7 @@ def layout_dashboard1():
         title="Figura 3. Venda Média Semanal por Período",
         yaxis_title="Venda Média ($)", xaxis_title="",
     )
+    ajustar_grafico(fig_feriados, top=82, left=76, right=36, bottom=72)
 
     # ── Gráfico 4: Top 10 lojas ───────────────────────────────────────────────
     # Sao selecionadas as 10 lojas com maior faturamento acumulado no periodo.
@@ -294,9 +310,10 @@ def layout_dashboard1():
     )
     fig_top_lojas.update_traces(
         texttemplate="$%{x:.0f}M", textposition="outside",
-        textfont=dict(size=10), marker_line_width=0,
+        textfont=dict(size=10), marker_line_width=0, cliponaxis=False,
     )
     fig_top_lojas.update_layout(coloraxis_showscale=False)
+    ajustar_grafico(fig_top_lojas, left=84, right=72, bottom=54)
 
     # ── Callout de insights ───────────────────────────────────────────────────
     # Os insights resumem as conclusoes principais para defender na apresentacao.
@@ -335,7 +352,11 @@ def layout_dashboard1():
     def carta(fig, span=1):
         # Pequena funcao auxiliar para nao repetir a estrutura visual dos graficos.
         return html.Div(
-            dcc.Graph(figure=fig, config={"displayModeBar": False}),
+            dcc.Graph(
+                figure=fig,
+                config={"displayModeBar": False, "responsive": True},
+                style=ESTILO_GRAFICO,
+            ),
             style={**ESTILO_CARTA, "gridColumn": f"span {span}"},
         )
 
@@ -344,7 +365,7 @@ def layout_dashboard1():
         carta(fig_tipo, 1),
         carta(fig_feriados, 2),
         carta(fig_top_lojas, 1),
-    ], style={
+    ], className="dashboard-grid", style={
         "display": "grid",
         "gridTemplateColumns": "repeat(3, 1fr)",
         "gap": "16px", "marginBottom": "24px",
@@ -435,7 +456,11 @@ def layout_dashboard2():
     def graf_box(id_graf):
         # Cria o card do grafico deixando o codigo do layout mais limpo.
         return html.Div(
-            dcc.Graph(id=id_graf, config={"displayModeBar": False}),
+            dcc.Graph(
+                id=id_graf,
+                config={"displayModeBar": False, "responsive": True},
+                style=ESTILO_GRAFICO,
+            ),
             style=ESTILO_CARTA,
         )
 
@@ -444,22 +469,25 @@ def layout_dashboard2():
         html.Div([
             graf_box("graf-vendas-tempo"),
             graf_box("graf-feriados"),
-        ], style={"display": "grid", "gridTemplateColumns": "2fr 1fr",
+        ], className="charts-row charts-row-top",
+           style={"display": "grid", "gridTemplateColumns": "2fr 1fr",
                   "gap": "14px", "marginBottom": "14px"}),
         html.Div([
             graf_box("graf-departamentos"),
             graf_box("graf-boxplot-tipo"),
             graf_box("graf-markdown"),
-        ], style={"display": "grid", "gridTemplateColumns": "1fr 1fr 1fr",
+        ], className="charts-row charts-row-three",
+           style={"display": "grid", "gridTemplateColumns": "1fr 1fr 1fr",
                   "gap": "14px", "marginBottom": "14px"}),
         html.Div([
             graf_box("graf-trimestre"),
             graf_box("graf-porte"),
-        ], style={"display": "grid", "gridTemplateColumns": "1fr 1fr",
+        ], className="charts-row charts-row-two",
+           style={"display": "grid", "gridTemplateColumns": "1fr 1fr",
                   "gap": "14px"}),
-    ], style={"flex": "1", "minWidth": "0"})
+    ], style={"flex": "1", "minWidth": "0", "width": "100%"})
 
-    return html.Div([sidebar, charts_area], style={
+    return html.Div([sidebar, charts_area], className="dashboard2-layout", style={
         "display": "flex", "gap": "20px", "alignItems": "flex-start",
     })
 
@@ -516,7 +544,7 @@ def update_vendas_tempo(anos, tipos, porte, temperatura, estacao):
         color_discrete_map=CORES_TIPO, markers=True,
     )
     fig.update_traces(marker_size=3, line_width=1.8)
-    return fig
+    return ajustar_grafico(fig, legend_x=0.42)
 
 
 @callback(Output("graf-feriados", "figure"), *INPUTS_FILTRO)
@@ -536,7 +564,7 @@ def update_feriados(anos, tipos, porte, temperatura, estacao):
     )
     fig.update_traces(marker_line_width=0)
     fig.update_layout(coloraxis_showscale=False)
-    return fig
+    return ajustar_grafico(fig, left=112, right=32, bottom=72)
 
 
 @callback(Output("graf-departamentos", "figure"), *INPUTS_FILTRO)
@@ -557,7 +585,7 @@ def update_departamentos(anos, tipos, porte, temperatura, estacao):
     )
     fig.update_traces(marker_line_width=0)
     fig.update_layout(coloraxis_showscale=False)
-    return fig
+    return ajustar_grafico(fig, left=96, right=32, bottom=72)
 
 
 @callback(Output("graf-boxplot-tipo", "figure"), *INPUTS_FILTRO)
@@ -575,7 +603,7 @@ def update_boxplot(anos, tipos, porte, temperatura, estacao):
     )
     fig.update_traces(marker_line_width=0)
     fig.update_layout(showlegend=False)
-    return fig
+    return ajustar_grafico(fig, left=76, right=28)
 
 
 @callback(Output("graf-markdown", "figure"), *INPUTS_FILTRO)
@@ -600,6 +628,11 @@ def update_markdown(anos, tipos, porte, temperatura, estacao):
         color_discrete_map={"Com promoção": AZUL, "Sem promoção": CINZA_L},
     )
     fig.update_traces(marker_line_width=0)
+    ajustar_grafico(fig, top=76, left=64, right=20, bottom=118)
+    fig.update_layout(
+        legend=dict(x=0.5, xanchor="center", y=-0.22, yanchor="top"),
+        xaxis=dict(tickangle=0, tickfont=dict(size=10, color=CINZA_M)),
+    )
     return fig
 
 
@@ -619,7 +652,7 @@ def update_trimestre(anos, tipos, porte, temperatura, estacao):
         category_orders={"Trimestre": ["Q1", "Q2", "Q3", "Q4"]},
     )
     fig.update_traces(marker_line_width=0)
-    return fig
+    return ajustar_grafico(fig, legend_x=0.38)
 
 
 @callback(Output("graf-porte", "figure"), *INPUTS_FILTRO)
@@ -641,6 +674,8 @@ def update_porte(anos, tipos, porte, temperatura, estacao):
         color_discrete_sequence=[AZUL, CINZA_E, "#5B8DB8", CINZA_L],
     )
     fig.update_traces(marker_line_width=0)
+    ajustar_grafico(fig, top=76, bottom=126, legend_x=0)
+    fig.update_layout(legend=dict(y=-0.22, yanchor="top"))
     return fig
 
 
