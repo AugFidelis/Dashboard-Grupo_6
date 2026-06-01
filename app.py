@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 import plotly.io as pio
 import pandas as pd
 
-# Aqui eu carrego a base ja tratada no script de preparacao.
+# Aqui e carregada a base ja tratada no script de preparacao.
 # Essa base e a que alimenta todos os graficos do dashboard.
 
 # ── Dados ─────────────────────────────────────────────────────────────────────
@@ -13,7 +13,7 @@ df = pd.read_csv("data/processed/walmart_limpo.csv")
 df["Date"] = pd.to_datetime(df["Date"])
 
 # ── Paleta ────────────────────────────────────────────────────────────────────
-# Separei as cores em variaveis para manter o dashboard padronizado
+# As cores ficam em variaveis para manter o dashboard padronizado
 # e facilitar qualquer ajuste visual antes da apresentacao.
 AZUL    = "#1A56A0"
 CINZA_E = "#444444"
@@ -205,7 +205,7 @@ def layout_dashboard1():
     ], style={"display": "flex", "gap": "12px", "flexWrap": "wrap", "marginBottom": "28px"})
 
     # ── Gráfico 1: Evolução mensal ────────────────────────────────────────────
-    # Agrupo por ano e mes para transformar os dados semanais em serie mensal.
+    # Os dados sao agrupados por ano e mes para transformar as vendas semanais em serie mensal.
     df_mensal = df.groupby(["Ano", "Mes"])["Weekly_Sales"].sum().reset_index()
     df_mensal["Periodo"] = pd.to_datetime(
         df_mensal["Ano"].astype(str) + "-" + df_mensal["Mes"].astype(str), format="%Y-%m"
@@ -227,7 +227,7 @@ def layout_dashboard1():
     fig_tendencia.update_layout(showlegend=False)
 
     # ── Gráfico 2: Tipo de loja ───────────────────────────────────────────────
-    # Aqui comparo os tipos de loja para mostrar qual grupo puxa mais faturamento.
+    # Aqui os tipos de loja sao comparados para mostrar qual grupo puxa mais faturamento.
     df_tipo = df.groupby("Type")["Weekly_Sales"].agg(["sum", "mean"]).reset_index()
     df_tipo.columns = ["Tipo", "Total", "Media"]
     df_tipo["Total_B"] = df_tipo["Total"] / 1_000_000_000
@@ -247,7 +247,7 @@ def layout_dashboard1():
     fig_tipo.update_layout(showlegend=False)
 
     # ── Gráfico 3: Feriados ───────────────────────────────────────────────────
-    # Calculo a media por feriado para ver quais datas mudam mais o resultado.
+    # A media por feriado e calculada para ver quais datas mudam mais o resultado.
     df_feriado = df.groupby("Nome_Feriado")["Weekly_Sales"].mean().reset_index()
     df_feriado.columns = ["Feriado", "Media_Vendas"]
     df_feriado = df_feriado.sort_values("Media_Vendas", ascending=False)
@@ -277,7 +277,7 @@ def layout_dashboard1():
     )
 
     # ── Gráfico 4: Top 10 lojas ───────────────────────────────────────────────
-    # Seleciono as 10 lojas com maior faturamento acumulado no periodo.
+    # Sao selecionadas as 10 lojas com maior faturamento acumulado no periodo.
     df_lojas = df.groupby("Store")["Weekly_Sales"].sum().reset_index()
     df_lojas.columns = ["Loja", "Total"]
     df_lojas = df_lojas.nlargest(10, "Total")
@@ -299,7 +299,7 @@ def layout_dashboard1():
     fig_top_lojas.update_layout(coloraxis_showscale=False)
 
     # ── Callout de insights ───────────────────────────────────────────────────
-    # Os insights resumem as conclusoes que eu quero defender na apresentacao.
+    # Os insights resumem as conclusoes principais para defender na apresentacao.
     insights = html.Div([
         html.Div(style={
             "width": "3px", "background": AZUL,
@@ -485,7 +485,7 @@ def filtrar(anos, tipos, porte, temperatura, estacao):
     return df[mask]
 
 INPUTS_FILTRO = [
-    # Lista comum de entradas dos filtros. Assim eu nao preciso repetir
+    # Lista comum de entradas dos filtros. Assim nao e necessario repetir
     # os mesmos Inputs manualmente em cada callback.
     Input("filtro-ano", "value"),
     Input("filtro-tipo", "value"),
@@ -503,7 +503,7 @@ def update_vendas_tempo(anos, tipos, porte, temperatura, estacao):
     dff = filtrar(anos, tipos, porte, temperatura, estacao)
     if dff.empty:
         return go.Figure()
-    # Agrupo por mes e tipo de loja para comparar tendencias entre A e B.
+    # Os dados sao agrupados por mes e tipo de loja para comparar tendencias entre A e B.
     df_mes = dff.groupby(["Ano", "Mes", "Type"])["Weekly_Sales"].sum().reset_index()
     df_mes["Periodo"] = pd.to_datetime(
         df_mes["Ano"].astype(str) + "-" + df_mes["Mes"].astype(str), format="%Y-%m"
@@ -584,7 +584,7 @@ def update_markdown(anos, tipos, porte, temperatura, estacao):
     dff = filtrar(anos, tipos, porte, temperatura, estacao)
     if dff.empty:
         return go.Figure()
-    # Uso copy para criar colunas auxiliares sem modificar o dataframe original.
+    # O copy e usado para criar colunas auxiliares sem modificar o dataframe original.
     dff = dff.copy()
     dff["Promocao"] = dff["Tem_Promocao"].map({True: "Com promoção", False: "Sem promoção"})
     df_md = dff.groupby(["Mes", "Promocao"])["Weekly_Sales"].mean().reset_index()
@@ -645,5 +645,5 @@ def update_porte(anos, tipos, porte, temperatura, estacao):
 
 
 if __name__ == "__main__":
-    # Executa o servidor local do Dash quando rodamos: python app.py
+    # Executa o servidor local do Dash com o comando: python app.py
     app.run(debug=True)

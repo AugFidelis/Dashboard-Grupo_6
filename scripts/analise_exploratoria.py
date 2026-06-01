@@ -25,7 +25,7 @@ print(f"Periodo:   {df['Date'].min().date()} a {df['Date'].max().date()}")
 print(f"Lojas:     {df['Store'].nunique()} (IDs {df['Store'].min()}–{df['Store'].max()})")
 print(f"Deptos:    {df['Dept'].nunique()} distintos")
 print(f"\nTipos de loja:")
-# Primeiro faco um diagnostico geral para saber tamanho da base,
+# Primeiro e feito um diagnostico geral para saber tamanho da base,
 # periodo analisado, quantidade de lojas e perfil dos tipos de loja.
 print(df.groupby("Type").agg(
     n_lojas=("Store", "nunique"),
@@ -45,7 +45,7 @@ print(stats.apply(lambda x: f"$ {x:,.0f}"))
 print("\n" + "=" * 60)
 print("VENDAS POR ANO")
 print("=" * 60)
-# Aqui comparo o desempenho agregado de cada ano para ver a tendencia geral.
+# Aqui o desempenho agregado de cada ano e comparado para ver a tendencia geral.
 por_ano = df.groupby("Ano")["Weekly_Sales"].agg(
     total="sum", media="mean", mediana="median"
 ).round(0)
@@ -55,7 +55,7 @@ print(por_ano.map(lambda x: f"$ {x:,.0f}"))
 print("\n" + "=" * 60)
 print("IMPACTO DOS FERIADOS")
 print("=" * 60)
-# Comparo cada feriado com a media geral para medir o impacto percentual.
+# Cada feriado e comparado com a media geral para medir o impacto percentual.
 media_geral = df["Weekly_Sales"].mean()
 por_feriado = df.groupby("Nome_Feriado")["Weekly_Sales"].agg(
     media="mean", total="sum", n_semanas="count"
@@ -99,7 +99,7 @@ for dept, val in top_depts.items():
 print("\n" + "=" * 60)
 print("IMPACTO DAS MARKDOWNS (PROMOÇÕES)")
 print("=" * 60)
-# Somo as cinco colunas MarkDown para criar uma leitura unica de promocao.
+# As cinco colunas MarkDown sao somadas para criar uma leitura unica de promocao.
 df["Total_Markdown"] = df[["MarkDown1", "MarkDown2", "MarkDown3",
                              "MarkDown4", "MarkDown5"]].sum(axis=1)
 df["Com_Markdown"] = df["Total_Markdown"] > 0

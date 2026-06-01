@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=IBM+Plex+Serif:wght@400;500&display=swap');
 
-/* CSS geral do dashboard. Mantive aqui somente ajustes visuais que o Dash
+/* CSS geral do dashboard. Aqui ficam somente ajustes visuais que o Dash
    nao controla tao bem direto pelo Python. */
 
 *, *::before, *::after { box-sizing: border-box; }
