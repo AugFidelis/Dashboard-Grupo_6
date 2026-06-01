@@ -1,15 +1,4 @@
-# PROJETO FINAL - DASHBOARD WALMART
-
-dash
-plotly
-
-pandas
-numpy
-
-notebook
-ipykernel
-
-# requests
-# beautifulsoup4
-
-# pip install -r requirements.txt
+dash>=2.14.0
+plotly>=5.17.0
+pandas>=2.0.0
+numpy>=1.24.0

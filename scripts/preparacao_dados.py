@@ -63,6 +63,41 @@ def preparar_dados():
     # Aplica a função linha por linha criando a nova coluna
     df_merged['Nome_Feriado'] = df_merged.apply(nomear_feriado, axis=1)
 
+    # 5.3 Trimestre — facilita comparações Q1/Q2/Q3/Q4 no dashboard
+    df_merged['Trimestre'] = df_merged['Mes'].apply(
+        lambda m: f'Q{(m - 1) // 3 + 1}'
+    )
+
+    # 5.4 Estação do ano (hemisférico norte, onde ficam as lojas dos EUA)
+    def classificar_estacao(mes):
+        if mes in [12, 1, 2]:
+            return 'Inverno'
+        elif mes in [3, 4, 5]:
+            return 'Primavera'
+        elif mes in [6, 7, 8]:
+            return 'Verão'
+        else:
+            return 'Outono'
+
+    df_merged['Estacao'] = df_merged['Mes'].apply(classificar_estacao)
+
+    # 5.5 Total de promoções aplicadas na semana (soma dos 5 MarkDowns)
+    colunas_markdown = ['MarkDown1', 'MarkDown2', 'MarkDown3', 'MarkDown4', 'MarkDown5']
+    df_merged['Total_Markdown'] = df_merged[colunas_markdown].sum(axis=1)
+
+    # 5.6 Flag se houve alguma promoção na semana
+    df_merged['Tem_Promocao'] = df_merged['Total_Markdown'] > 0
+
+    # 5.7 Porte da loja com base no tamanho (em pés quadrados)
+    # Pequena: abaixo do percentil 33 | Média: entre 33 e 66 | Grande: acima do 66
+    p33 = df_merged['Size'].quantile(0.33)
+    p66 = df_merged['Size'].quantile(0.66)
+    df_merged['Porte_Loja'] = pd.cut(
+        df_merged['Size'],
+        bins=[0, p33, p66, float('inf')],
+        labels=['Pequena', 'Média', 'Grande']
+    )
+
     # 6. Exportação
     df_merged.to_csv('data/processed/walmart_limpo.csv', index=False)
     
